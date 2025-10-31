@@ -1,1 +1,46 @@
 
+import re
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+training_code = [
+    "for i in range(10): print(i)",  # good
+    "x=10\nx=20",                   # bad (unused variable)
+    "def calc(): pass",             # bad (empty function)
+    "print('Hello World')"          # good
+]
+labels = ['good', 'bad', 'bad', 'good']
+vectorizer = CountVectorizer()
+X_train = vectorizer.fit_transform(training_code)
+model = MultinomialNB()
+model.fit(X_train, labels)
+def rule_based_analysis(code):
+    issues = []
+    if "==" in code and "if" not in code:
+        issues.append("Possible logical error: '==' outside condition.")
+    if re.search(r'\b[a-zA-Z]\d+', code):
+        issues.append("Variable naming not meaningful.")
+    if "pass" in code:
+        issues.append("Empty function detected.")
+    if "print(" not in code:
+        issues.append("No output or print statement found.")
+    return issues
+def ai_review(code):
+    rule_issues = rule_based_analysis(code)
+    X_test = vectorizer.transform([code])
+    prediction = model.predict(X_test)[0]
+    print("\n--- AI Code Review Report ---")
+    print(f"AI Quality Classification: {prediction.upper()}")
+    if rule_issues:
+        print("Issues Found:")
+        for issue in rule_issues:
+            print(" -", issue)
+    else:
+        print("No major issues detected. Code looks clean!")
+user_code = """
+def example():
+    x = 5
+    y = 10
+    z = x + y
+    return z
+"""
+ai_review(user_code)
